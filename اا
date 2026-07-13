@@ -1,3 +1,26 @@
+def get_ai_response(user_text, name, history):
+    prompt_with_name = SYSTEM_PROMPT_BASE + f"\n[USER NAME: {name}]"
+    messages = [{"role": "system", "content": prompt_with_name}]
+    
+    # 🧠 التعديل الأسطوري: بناء التناوب بناءً على رقم الرسالة الفعلي (i) وليس الكلمة
+    if history and len(history) > 0:
+        for i, past_msg in enumerate(history[-6:]):
+            # أول رسالة بالـ history المرسل هي كلام اليوزر، اللي بعدها رد البوت، وهكذا
+            role = "user" if i % 2 == 0 else "assistant"
+            messages.append({"role": role, "content": past_msg})
+    else:
+        messages.append({"role": "user", "content": user_text})
+        
+    try:
+        response = ai_client.chat.completions.create(
+            model="gpt-4o", 
+            messages=messages
+        )
+        return response.choices[0].message.content
+    except Exception as e:
+        print(f"G4F Error: {e}")
+        return "."
+
 # 2️⃣ استقبال النصوص العام للـ AI + فحص أسئلة الغياب تلقائياً
 @dp.message(F.text & ~F.text.startswith("/"))
 async def handle_text(message: types.Message):
@@ -14,15 +37,15 @@ async def handle_text(message: types.Message):
     if uid not in user_histories: 
         user_histories[uid] = []
     
-    # 💡 الحل هنا: نحفظ رسالتك الحالية بالذاكرة فوراً قبل استدعاء الـ AI
+    # 1. نحفظ كلامك الحالي بالذاكرة فوراً
     user_histories[uid].append(message.text)
     
     await bot.send_chat_action(message.chat.id, "typing")
     
-    # نرسل الذاكرة وهي تحتوي على رسالتك الجديدة
+    # 2. نستدعي الـ AI ونرسل له الذاكرة المحدثة
     reply = get_ai_response(message.text, message.from_user.first_name, user_histories[uid])
     
-    # الحين نحفظ رد البوت وراها بالترتيب
+    # 3. نحفظ رد البوت بالذاكرة وراها
     user_histories[uid].append(reply)
     
     await message.answer(reply)
