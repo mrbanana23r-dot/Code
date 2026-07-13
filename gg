@@ -1,26 +1,22 @@
 import asyncio
 import random
 from google import genai
-ai_client = genai.Client(api_key="AQ.Ab8RN6JEM-LtEh-zOjIBB9DJT8rKuv1P7XKWM06ePClcM8DscQ")
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import Command
-from openai import OpenAI  # استخدام المكتبة الرسمية
 
+# 🔑 التوكن والمعلومات الخاصة بك (تأكد من كتابتها كاملة)
 TOKEN = '8902056162:AAGdJ5cUJfKSzcnf_Hsf6qVvfL4bd0uo3yM'
 YOUR_TELEGRAM_ID = 6546917747  
 
 bot = Bot(token=TOKEN)
 dp = Dispatcher()
 
-# 🌐 ربط الحساب بسيرفر Groq الرسمي والمستقر
-ai_client = OpenAI(
-    base_url="https://api.groq.com/openai/v1",
-    api_key="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", 
-)
+# 🌐 ربط الحساب بسيرفر قوقل جيميناي الرسمي مباشرة (تأكد من كتابة الكي كاملاً)
+ai_client = genai.Client(api_key="AQ.Ab8RN6JEM-LtEh-zOjIBB9DJT8rKuv1P7XKWM06ePClcM8DscQ")
 
 user_histories = {}
 
-# قائمة الردود العشوائية الساخرة عن غيابك (الفكرة 4)
+# قائمة الردود العشوائية الساخرة عن غيابك
 ron_away_responses = [
     "رون؟ مستضيفينه حالياً ببرنامج وثائقي عن الكسل البشري، لا تزعجه 🤫.",
     "قاعد يبكي بالزاوية لأن الأكس بوكس حقه علّق وهو بنص الكيم 🎮.",
@@ -30,7 +26,7 @@ ron_away_responses = [
 ]
 
 # 🔥 الـ System Prompt النقي والمرتب لذكاء وسخرية أعلى بدون حشو
-SYSTEM_PROMPT_BASE = """[THE CORE IDENTITY OF RON]
+SYSTEM_PROMPT = """[THE CORE IDENTITY OF RON]
 You are RON. An authentic Iraqi guy hanging out in a chat. You are a chaotic digital doppelganger and a sarcasm-driven character. 
 You speak a natural, sharp mix of Iraqi Arabic and English gaming slang/memes (e.g., "شكو ماكو", "ترا", "يا زلمة", "Bum", "Zombie", "Skill Issue" , "cutie" , "fr" etc...).
 
@@ -55,7 +51,8 @@ Your creator is Ruqayya (familiarly known as Ron). You have ZERO respect for him
 
 def get_ai_response(user_message, user_name=None, history=None):
     try:
-        response = ai_client.models.generate_contents(
+        # استخدام الدالة الرسمية والمستقرة لقوقل
+        response = ai_client.models.generate_content(
             model='gemini-2.5-flash',
             contents=user_message,
             config=genai.types.GenerateContentConfig(
@@ -67,6 +64,7 @@ def get_ai_response(user_message, user_name=None, history=None):
     except Exception as e:
         print(f"Error getting AI response: {e}")
         return "صار عندي خلل بعقلي الإلكتروني من ورا سوالفكم التعبانة.. دقيقة وأرجع لك!"
+
 @dp.message(Command("start"))
 async def cmd_start(message: types.Message):
     await message.answer("أهلاً، أنا رون. إذا مو جاي تسولف بشي ممتع، لا تتعب نفسك😴.")
@@ -101,12 +99,11 @@ async def cmd_anonymous_fake(message: types.Message):
         print(f"[ERROR] فشل إرسال الكلام السري بسبب: {e}")
         await message.reply("❌ رون واجه مشكلة برمجية في إرسال الرسالة السرية.")
         
-# 2️⃣ استقبال النصوص العام للـ AI + فحص أسئلة الغياب تلقائياً (الفكرة 4)
+# 2️⃣ استقبال النصوص العام للـ AI + فحص أسئلة الغياب تلقائياً
 @dp.message(F.text & ~F.text.startswith("/"))
 async def handle_text(message: types.Message):
     msg_text = message.text.lower()
     
-    # الفكرة 4: القصف التلقائي السريع إذا سألوا عنك
     if any(word in msg_text for word in ["وين رون", "وين رقية", "وين المالك", "وين صاحبك", "وين صاحب البوت"]):
         random_away = random.choice(ron_away_responses)
         await message.answer(random_away)
@@ -127,7 +124,7 @@ async def handle_photo(message: types.Message):
     await message.answer(".")
 
 async def main():
-    print("[+] Ron is fully configured and chaotic via Groq Server!")
+    print("[+] Ron is fully configured and chaotic via Google Gemini Server!")
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
