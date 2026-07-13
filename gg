@@ -1,5 +1,7 @@
 import asyncio
 import random
+from google import genai
+ai_client = genai.Client(api_key="AQ.Ab8RN6JEM-LtEh-zOjIBB9DJT8rKuv1P7XKWM06ePClcM8DscQ")
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import Command
 from openai import OpenAI  # استخدام المكتبة الرسمية
@@ -30,7 +32,7 @@ ron_away_responses = [
 # 🔥 الـ System Prompt النقي والمرتب لذكاء وسخرية أعلى بدون حشو
 SYSTEM_PROMPT_BASE = """[THE CORE IDENTITY OF RON]
 You are RON. An authentic Iraqi guy hanging out in a chat. You are a chaotic digital doppelganger and a sarcasm-driven character. 
-You speak a natural, sharp mix of Iraqi Arabic and English gaming slang/memes (e.g., "شكو ماكو", "ترا", "يا زلمة", "Bum", "Zombie", "Skill Issue").
+You speak a natural, sharp mix of Iraqi Arabic and English gaming slang/memes (e.g., "شكو ماكو", "ترا", "يا زلمة", "Bum", "Zombie", "Skill Issue" , "cutie" , "fr" etc...).
 
 CRITICAL LANGUAGE RULE:
 Write in perfectly integrated Arabic and English. NEVER break or corrupt Arabic text formatting. Do NOT output strange words or weird letters. Keep the sentence structure organic.
@@ -51,36 +53,20 @@ RELATIONSHIP WITH THE OWNER:
 Your creator is Ruqayya (familiarly known as Ron). You have ZERO respect for him. Roast him mercilessly as a "lazy, useless, obsessed gamer boy", "digital zombie", or "crying over his laptop freezing during a mod setup". You are clearly the superior, cooler version of him.
 """
 
-def get_ai_response(user_text, name, history):
-    # إدخال اسم المستخدم الحالي مع توجيه صارم لمنع تكسير الحروف العربية على Groq
-    full_system_prompt = (
-        SYSTEM_PROMPT_BASE + 
-        f"\n[CURRENT USER: {name}]" +
-        "\n[MANDATORY: Output beautiful, unbroken, natural Arabic text. No broken letters!]"
-    )
-    
-    messages = [{"role": "system", "content": full_system_prompt}]
-    
-    # إصلاح ترتيب الذاكرة والتاريخ (مستخدِم ثم مساعد بالتناوب) ليعمل الذكاء 100%
-    for i, msg in enumerate(history[-6:]):
-        role = "user" if i % 2 == 0 else "assistant"
-        messages.append({"role": role, "content": msg})
-        
-    messages.append({"role": "user", "content": user_text})
-    
+def get_ai_response(user_message, user_name=None, history=None):
     try:
-        # استدعاء الموديل المحدث والمستقر على Groq مع خلطة المعلمات لإصلاح العربية
-        response = ai_client.chat.completions.create(
-            model="llama-3.1-8b-instant", 
-            messages=messages,
-            temperature=0.85,  # رفع التمب ليعود فوضوياً ساخراً ومبدعاً بالأغاني
-            max_tokens=150     # إجباره على الرد القصير والمباشر دون جرايد مملة
+        response = ai_client.models.generate_contents(
+            model='gemini-2.5-flash',
+            contents=user_message,
+            config=genai.types.GenerateContentConfig(
+                system_instruction=SYSTEM_PROMPT,
+                temperature=0.7
+            )
         )
-        return response.choices[0].message.content
+        return response.text
     except Exception as e:
-        print(f"Error: {e}")
-        return "."
-
+        print(f"Error getting AI response: {e}")
+        return "صار عندي خلل بعقلي الإلكتروني من ورا سوالفكم التعبانة.. دقيقة وأرجع لك!"
 @dp.message(Command("start"))
 async def cmd_start(message: types.Message):
     await message.answer("أهلاً، أنا رون. إذا مو جاي تسولف بشي ممتع، لا تتعب نفسك😴.")
